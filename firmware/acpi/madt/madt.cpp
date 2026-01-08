@@ -4,6 +4,8 @@
 #include <mm.hpp>
 #include <logging.hpp>
 
+ACPI::ROS_APIC_INFO_TABLE RApicInfoTable;
+
 namespace ACPI {
     VOID ParseMADT(){
         if(g_MADT == nullptr){
@@ -15,6 +17,21 @@ namespace ACPI {
 
         g_LocalApicAddress = MADT->LocalApicAddress;
         Printk::Write(Printk::Level::LOG_INFO, " MADT Local APIC Address: %p\n", (void*)(uintptr_t)g_LocalApicAddress);
+
+		if(MADT->Header.Length < sizeof(*MADT)){
+			Printk::Write(Printk::Level::LOG_INFO, " MADT IS SHORT.\n", (void*)(uintptr_t)g_LocalApicAddress);
+			return;
+		}
+        
+		if(MADT->Flags & 1){
+			RApicInfoTable.APICMode = ROS_APIC_MODE_SYMMETRIC_IO;
+			Printk::Write(Printk::Level::LOG_INFO, " System has dual PIC, will be masked.\n");
+		} 
+		else {
+			RApicInfoTable.APICMode = ROS_APIC_MODE_SYMMETRIC_IO;
+		}
+
+		RApicInfoTable.LocalAPICPA = g_MADT;
 
         const uint8_t *base = (const uint8_t*)MADT;
         const uint8_t *end = base + MADT->Header.Length;
@@ -29,8 +46,14 @@ namespace ACPI {
             }
 
             switch (Entry->Type) {
-                case 0: {
+                case MADT_MULTI_LOCAL_APIC: {
                     const MadtEntryLocalApic *LAPIC = (const MadtEntryLocalApic *)cur;
+
+					if(Entry->Length != sizeof(*LAPIC)){
+						Printk::Write(Printk::LOG_ERR, "ERROR ACPI: MADT ENTRY LENGTH IS MISMATCHED.\n");
+						return;
+					}	 
+				
                     if (g_CpuCount < MAX_CPU_COUNT) {
                         g_CpuApicIds[g_CpuCount] = LAPIC->ApicId;
                         g_CpuCount++;
@@ -40,7 +63,7 @@ namespace ACPI {
                     break;
                 }
 
-                case 1: {
+                case MADT_IO_APIC: {
                     const MadtEntryIoApic *IOAPIC = (const MadtEntryIoApic *)cur;
                     g_IoApicAddress = IOAPIC->IoApicAddress;
                     Printk::Write(Printk::Level::LOG_INFO, " MADT I/O APIC Entry: IoApicID=%u Address=%p GSIBase=%u\n",
@@ -48,6 +71,10 @@ namespace ACPI {
                         (void*)(uintptr_t)IOAPIC->IoApicAddress,
                         (unsigned)IOAPIC->GlobalSystemInterruptBase);
                     break;
+                }
+
+                case MADT_ISO_APIC:{
+                    
                 }
 
                 default: {
