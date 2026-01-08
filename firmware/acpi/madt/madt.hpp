@@ -71,14 +71,5 @@ namespace ACPI {
 		U64 IoAPICVA[MAX_IOAPIC_COUNT];
 		U64 IoAPICPA[MAX_IOAPIC_COUNT];
 		U32 IoAPICIRQBase[MAX_IOAPIC_COUNT];
-		} ROS_APIC_INFO_TABLE, *PROS_APIC_INFO_TABLEtypedef struct _HALP_APIC_INFO_TABLE
-{
-    ULONG ApicMode;
-    ULONG ProcessorCount; /* Count of all physical cores, This includes BSP */
-    ULONG IOAPICCount;
-    ULONG LocalApicPA;                // The 32-bit physical address at which each processor can access its local interrupt controller
-    ULONG IoApicVA[HALP_APIC_INFO_TABLE_IOAPIC_NUMBER];
-    ULONG IoApicPA[HALP_APIC_INFO_TABLE_IOAPIC_NUMBER];
-    ULONG IoApicIrqBase[HALP_APIC_INFO_TABLE_IOAPIC_NUMBER]; // Global system interrupt base
-} HALP_APIC_INFO_TABLE, *PHALP_APIC_INFO_TABLE;;
+		} ROS_APIC_INFO_TABLE, *PROS_APIC_INFO_TABLEtypedef 
 }
